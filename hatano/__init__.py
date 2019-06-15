@@ -1,14 +1,14 @@
 import argparse
+import boto3
 import json
 import os
-import yaml
-import boto3
-import zipfile
 import random
 import string
-import time
 import shutil
 import subprocess as sp
+import time
+import yaml
+import zipfile
 
 __version__ = '1.0.0'
 __author__ = 'Jared Nishikawa'
@@ -16,6 +16,7 @@ __author_email__ = 'jared@tripleko.com'
 __description__ = 'Microframework for Lambda/API gateway'
 
 conf_file = './hatano_settings.yml'
+region = boto3.session.Session().region_name
 
 trust = {
   "Version": "2012-10-17",
@@ -23,13 +24,15 @@ trust = {
     {
       "Effect": "Allow",
       "Principal": {
-        "Service": "lambda.amazonaws.com"
+        "Service": [
+            "lambda.amazonaws.com",
+            "apigateway.amazonaws.com"
+            ]
       },
       "Action": "sts:AssumeRole"
     }
   ]
 }
-
 
 
 def handle():
@@ -103,20 +106,45 @@ def handle_deploy(args):
     if not (runtime or source or project):
         print("Invalid runtime, source, or project")
         return
+    proj_stg = f"{project}-{stage}"
 
     lda = boto3.client('lambda')
     iam = boto3.client('iam')
+    agw = boto3.client('apigateway')
 
+    api = agw.create_rest_api(name=project)
+    rest_id = api['id']
+    invoke_url = f"https://{rest_id}.execute-api.{region}.amazonaws.com"
+
+    resources = agw.get_resources(restApiId=rest_id)
+    root = [item for item in resources['items'] \
+            if item['path'] == '/'][0]
+    root_id = root['id']
 
     for fn in stg_conf.get("functions", []):
         name = fn.get("name", "")
         fullname = f"{project}-{name}-{stage}"
         handler = fn.get("handler", "")
-        if not (name or handler):
-            print("Invalid name or handler")
+        http_method = fn.get("http", "")
+
+        http_fullpath = fn.get("path", "")
+        base, http_path = os.path.split(http_fullpath)
+        if not (name or handler or http_method or http_path):
+            print("Invalid name, handler, http_method, or http_path")
             print(name)
             print(handler)
             continue
+
+        resource = agw.create_resource(
+                restApiId=rest_id,
+                parentId=root_id,
+                pathPart=http_path)
+
+        method = agw.put_method(
+                restApiId=rest_id,
+                resourceId=resource['id'],
+                httpMethod=http_method,
+                authorizationType='NONE')
 
         role = iam.create_role(
                 Path=f"/{project}/",
@@ -124,19 +152,51 @@ def handle_deploy(args):
                 AssumeRolePolicyDocument=json.dumps(trust)
                 )
         role_arn = role['Role']['Arn']
-        time.sleep(20)
+        #time.sleep(10)
 
-        #zip_name = zip_src(source)
         with ZipSrc(source, stage) as zip_name:
-            lda.create_function(
-                    FunctionName=fullname,
-                    Handler=handler,
-                    Runtime=runtime,
-                    Role=role_arn,
-                    Code={
-                        'ZipFile': open(zip_name, 'rb').read()}
-                    )
+            for attempt in range(5):
+                try:
+                    func = lda.create_function(
+                            FunctionName=fullname,
+                            Handler=handler,
+                            Runtime=runtime,
+                            Role=role_arn,
+                            Code={
+                                'ZipFile': open(zip_name, 'rb').read()}
+                            )
+                    break
+                except Exception as e:
+                    print(e)
+            else:
+                sys.exit("Max retries exceeded")
+                    
+
+
+        lda.add_permission(
+                FunctionName=fullname,
+                StatementId=fullname,
+                Action="lambda:InvokeFunction",
+                Principal="apigateway.amazonaws.com"
+                )
+
+        func_arn = func['FunctionArn']
+        uri = f"arn:aws:apigateway:{region}:lambda:path/2015-03-31/functions/{func_arn}/invocations"
+
+        integration = agw.put_integration(
+                restApiId=rest_id,
+                resourceId=resource['id'],
+                httpMethod=http_method.upper(),
+                integrationHttpMethod="POST",
+                uri=uri,
+                type="AWS_PROXY")
+
         print("Success creating", fullname)
+    agw.create_deployment(
+            restApiId=rest_id,
+            stageName=stage)
+
+    print(f"{invoke_url}/{stage}")
 
 
 def handle_update(args):
@@ -214,22 +274,6 @@ class ZipSrc:
             except:
                 pass
 
-def zip_src(src):
-    if not os.path.isdir(src):
-        return False
-    head = f"{src}{os.path.sep}"
-    name = temp_name('.zip')
-    zf = zipfile.ZipFile(name, 'x')
-    for dirname,subdirs,fnames in os.walk(src):
-        for name in subdirs+fnames:
-            zpath = os.path.join(dirname, name)
-            path = zpath
-            if path.startswith(head):
-                path = path[len(head):]
-            zf.write(zpath, path)
-    zf.close()
-    return name
-
 
 def temp_name(ext=""):
     allow = string.ascii_lowercase + string.ascii_uppercase
@@ -246,9 +290,17 @@ def handle_delete(args):
     if not (runtime or source or project):
         print("Invalid runtime, source, or project")
         return
+    proj_stg = f"{project}-{stage}"
 
     lda = boto3.client('lambda')
     iam = boto3.client('iam')
+    agw = boto3.client('apigateway')
+
+    all_apis = agw.get_rest_apis()
+    for api in all_apis['items']:
+        if api['name'] == project:
+            agw.delete_rest_api(restApiId=api['id'])
+
     for fn in stg_conf.get("functions", []):
         name = fn.get("name", "")
         fullname = f"{project}-{name}-{stage}"
