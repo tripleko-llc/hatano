@@ -1,0 +1,5 @@
+hatano_settings.yml
+src/
+requirements-dev.txt
+*.egg-info
+Pipfile*
