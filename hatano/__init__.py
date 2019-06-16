@@ -24,10 +24,7 @@ def handle():
 
     args = parser.parse_args()
 
-    if args.action == "init":
-        pass
-
-    elif args.action == "deploy":
+    if args.action == "deploy":
         deploy(args)
 
     elif args.action == "update":

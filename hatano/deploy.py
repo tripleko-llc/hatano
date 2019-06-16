@@ -1,4 +1,4 @@
-from hatano.util import get_stage
+from hatano.util import Conf
 from hatano.iam import IamRole
 from hatano.lmbda import Lambda
 from hatano.apigateway import RestApi
@@ -11,7 +11,8 @@ def deploy(args):
     stage = args.stage
 
     # Get project configuration
-    project, stg_conf = get_stage(stage)
+    c = Conf()
+    project, stg_conf = c.get_stage(stage)
 
     # Create REST API
     api = RestApi(project, create=True)

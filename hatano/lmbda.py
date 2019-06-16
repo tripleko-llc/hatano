@@ -1,12 +1,13 @@
 from hatano.errors import HatanoError
 from hatano.util import ZipSrc
-from hatano.util import get_stage
+from hatano.util import Conf
 
 import boto3
 
 class Lambda:
     def __init__(self, stage, fnargs, role_arn=""):
-        self.project, stg_conf = get_stage(stage)
+        c = Conf()
+        self.project, stg_conf = c.get_stage(stage)
         self.source = stg_conf.get("source")
         self.stage = stage
         self.role_arn = role_arn

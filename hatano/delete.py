@@ -1,10 +1,11 @@
-from hatano.util import get_stage
+from hatano.util import Conf
 
 import boto3
 
 def delete(args):
     stage = args.stage
-    project, stg_conf = get_stage(stage)
+    c = Conf()
+    project, stg_conf = c.get_stage(stage)
 
     lda = boto3.client('lambda')
     iam = boto3.client('iam')

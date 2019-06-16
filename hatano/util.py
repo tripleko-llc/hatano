@@ -10,7 +10,7 @@ import string
 import sys
 import yaml
 
-conf_file = './hatano_settings.yml'
+global_conf_file = './hatano_settings.yml'
 region = boto3.session.Session().region_name
 
 
@@ -63,15 +63,40 @@ def temp_name(ext=""):
     return ''.join(lets) + f"{ext}"
 
 
-def get_stage(stage):
-    if not os.path.isfile(conf_file):
-        raise HatanoError(f"No {conf_file} found")
+class Conf:
+    def __init__(self, conf=global_conf_file):
+        self.conf = conf
 
-    with open(conf_file) as f:
-        conf = yaml.safe_load(f.read())
-    project = conf.get("project", "")
-    stages = conf.get("stages", {})
+    def get_stage(self, stage):
+        if not os.path.isfile(self.conf):
+            raise HatanoError(f"No {self.conf} found")
     
-    return project, stages.get(stage, {})
+        with open(self.conf) as f:
+            conf = yaml.safe_load(f.read())
+
+        if not conf:
+            return "", {}
+
+        project = conf.get("project", "")
+        stages = conf.get("stages", {})
+        
+        return project, stages.get(stage, {})
+        
+    def exists(self):
+        return os.path.isfile(self.conf)
+
+    def touch(self):
+        with open(self.conf, 'a') as f:
+            pass
+
+    def read(self):
+        with open(self.conf) as f:
+            conf = yaml.safe_load(f.read())
+        return conf
+
+    def write(self, conf):
+        with open(self.conf, 'w') as f:
+            yaml.dump(conf, f)
+
 
 

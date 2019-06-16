@@ -1,4 +1,4 @@
-from hatano.util import get_stage
+from hatano.util import Conf
 
 import boto3
 import json
@@ -24,7 +24,8 @@ class IamRole:
     def __init__(self, stage, fnargs):
         self.stage = stage
         self.name = fnargs.get("name")
-        self.project, stg_conf = get_stage(stage)
+        c = Conf()
+        self.project, stg_conf = c.get_stage(stage)
         self.iam = boto3.client('iam')
 
     def lambda_role(self):
