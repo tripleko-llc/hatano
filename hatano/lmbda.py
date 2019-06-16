@@ -7,8 +7,9 @@ import sys
 import time
 
 class Lambda:
-    def __init__(self, stage, fnargs, role_arn=""):
+    def __init__(self, stage, fnargs, role_arn="", env={}):
         c = Conf()
+        self.env = env
         self.project, stg_conf = c.get_stage(stage)
         self.source = stg_conf.get("source")
         self.stage = stage
@@ -34,8 +35,8 @@ class Lambda:
                 Handler=self.handler,
                 Runtime=self.runtime,
                 Role=self.role_arn,
-                Code={
-                    'ZipFile': open(zip_name, 'rb').read()}
+                Environment={"Variables": self.env},
+                Code={'ZipFile': open(zip_name, 'rb').read()}
                 )
         return func
 
@@ -47,6 +48,7 @@ class Lambda:
                     func = self._create_function(zip_name)
                     break
                 except Exception as e:
+                    print(e)
                     time.sleep(delay)
                     delay += 1
             else:

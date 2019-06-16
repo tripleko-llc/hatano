@@ -4,7 +4,6 @@ from hatano.lmbda import Lambda
 from hatano.apigateway import RestApi
 from hatano.acm import Cert
 from hatano.route53 import Route53
-from hatano.events import Events
 
 import os
 
@@ -18,6 +17,7 @@ def deploy(args):
     project, stg_conf = c.get_stage(stage)
     domain = stg_conf.get("domain")
     cert = stg_conf.get("cert")
+    s3 = stg_conf.get("s3")
 
     # Create REST API
     print(f"Creating REST API for {project}")
@@ -66,6 +66,7 @@ def deploy_func(stage, fn, api=None):
         api = RestApi(stage, create=True)
 
     name = fn["name"]
+    env = fn.get("env", {})
     fullname = f"{project}-{name}-{stage}"
 
     http_method = fn.get("method", "")
@@ -75,23 +76,17 @@ def deploy_func(stage, fn, api=None):
     print("  - Creating IAM role")
     iam = IamRole(stage, fn)
     role = iam.lambda_role()
+    iam.put_custom_policy()
     role_arn = role['Role']['Arn']
 
     # Create lambda
     print("  - Creating lambda")
-    lmb = Lambda(stage, fn, role_arn)
+    lmb = Lambda(stage, fn, role_arn=role_arn, env=env)
     func = lmb.create_function()
     func_arn = func['FunctionArn']
     lmb.add_permission("apigateway", "InvokeFunction")
-    lmb.add_permission("events", "*")
 
     # Create resource and endpoint
     print("  - Linking endpoint to lambda")
     resource = api.create_resource(http_path)
     resource.link_endpoint(http_method, func_arn)
-
-    # Setup cloudwatch events
-    print("  - Setting up cloudwatch event")
-    e = Events()
-    e.put_rule(fullname, role_arn)
-

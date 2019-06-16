@@ -1,5 +1,6 @@
 from hatano.util import Conf
 from hatano.route53 import Route53
+from hatano.iam import IamRole
 
 import boto3
 
@@ -10,7 +11,6 @@ def clean(args):
     domain = stg_conf.get("domain")
 
     lda = boto3.client('lambda')
-    iam = boto3.client('iam')
     agw = boto3.client('apigateway')
     r53 = Route53()
 
@@ -38,6 +38,10 @@ def clean(args):
 
 
     for name in stg_conf.get("functions", {}):
+        fn = stg_conf["functions"][name]
+        fn["name"] = name
+        iam = IamRole(stage, fn)
+
         fullname = f"{project}-{name}-{stage}"
 
         try:
@@ -47,8 +51,14 @@ def clean(args):
             print(f"Failed: {e}")
 
         try:
+            print("Cleaning up custom role policy")
+            iam.delete_custom_policy()
+        except Exception as e:
+            print(f"Failed: {e}")
+
+        try:
             print(f"Cleaning up IAM role {fullname}")
-            iam.delete_role(RoleName=fullname)
+            iam.delete_role()
         except Exception as e:
             print(f"Failed: {e}")
    
