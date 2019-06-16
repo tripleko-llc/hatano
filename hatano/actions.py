@@ -31,6 +31,9 @@ def add_stage(args):
     stage = args.stage
     copy = args.copy
     source = args.source
+    runtime = args.runtime
+    domain = args.domain
+    cert = args.cert
 
     with open(f'requirements-{stage}.txt', 'a') as f:
         pass
@@ -51,7 +54,13 @@ def add_stage(args):
 
     conf["stages"][stage] = {
             "functions": {},
-            "source": source}
+            "source": source,
+            "runtime": runtime}
+    if domain:
+        conf["stages"][stage]["domain"] = domain
+    if cert:
+        conf["stages"][stage]["cert"] = cert
+
     c.write(conf)
 
 
@@ -67,8 +76,7 @@ def add_function(args):
     func = {
             "handler": args.handler,
             "method": args.method,
-            "path": args.path,
-            "runtime": args.runtime}
+            "path": args.path}
     conf["stages"][stage]["functions"][args.name] = func
     c.write(conf)
 
@@ -111,6 +119,9 @@ def edit_stage(args):
     stage = args.stage
     copy = args.copy
     source = args.source
+    runtime = args.runtime
+    domain = args.domain
+    cert = args.cert
 
     c = Conf()
     conf = c.read()
@@ -125,6 +136,14 @@ def edit_stage(args):
 
     if source:
         conf["stages"][stage]["source"] = source
+    if runtime:
+        conf["stages"][stage]["runtime"] = runtime
+    if domain:
+        conf["stages"][stage]["domain"] = domain
+    if cert:
+        conf["stages"][stage]["cert"] = cert
+
+
     c.write(conf)
 
 
@@ -153,8 +172,6 @@ def edit_function(args):
         func["method"] = args.method
     if args.path:
         func["path"] = args.path
-    if args.runtime:
-        func["runtime"] = args.runtime
 
     conf["stages"][stage]["functions"][args.name] = func
     c.write(conf)

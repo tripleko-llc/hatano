@@ -125,4 +125,17 @@ class RestApi:
                 stageName=stage)
 
 
+    def create_domain(self, domain, cert_arn):
+        return self.agw.create_domain_name(
+                domainName=domain,
+                certificateArn=cert_arn)
+
+    def create_base_path_mapping(self, domain, path, stage):
+        self.agw.create_base_path_mapping(
+                restApiId=self.rest_id,
+                domainName=domain,
+                basePath=path,
+                stage=stage)
+
+
 

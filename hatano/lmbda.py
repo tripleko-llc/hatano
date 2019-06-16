@@ -3,6 +3,8 @@ from hatano.util import ZipSrc
 from hatano.util import Conf
 
 import boto3
+import sys
+import time
 
 class Lambda:
     def __init__(self, stage, fnargs, role_arn=""):
@@ -39,12 +41,14 @@ class Lambda:
 
     def create_function(self):
         with ZipSrc(self.source, self.stage) as zip_name:
-            for attempt in range(5):
+            delay = 0.5
+            for attempt in range(10):
                 try:
                     func = self._create_function(zip_name)
                     break
                 except Exception as e:
-                    pass
+                    time.sleep(delay)
+                    delay += 1
             else:
                 sys.exit("Max retries exceeded")
         return func
@@ -56,12 +60,12 @@ class Lambda:
                     ZipFile=open(zip_name, 'rb').read()
                     )
 
-    def add_permission(self, principal):
+    def add_permission(self, principal, action):
         fullname = f"{self.project}-{self.name}-{self.stage}"
         self.lda.add_permission(
                 FunctionName=fullname,
                 StatementId=fullname + f"-{principal}",
-                Action="lambda:InvokeFunction",
+                Action=f"lambda:{action}",
                 Principal=f"{principal}.amazonaws.com"
                 )
 

@@ -34,13 +34,15 @@ def handle():
     stage_parser.add_argument("stage")
     stage_parser.add_argument("--copy")
     stage_parser.add_argument("--source", default="")
+    stage_parser.add_argument("--runtime", default="")
+    stage_parser.add_argument("--domain", default="")
+    stage_parser.add_argument("--cert", default="")
 
     func_parser = sub_addparsers.add_parser("function")
     func_parser.add_argument("name")
     func_parser.add_argument("--handler", required=True)
     func_parser.add_argument("--method", required=True)
     func_parser.add_argument("--path", required=True)
-    func_parser.add_argument("--runtime", required=True)
     func_parser.add_argument("--stage", required=True)
 
     edit_parser=subparsers.add_parser("edit")
@@ -50,13 +52,15 @@ def handle():
     stage_edit_parser.add_argument("stage")
     stage_edit_parser.add_argument("--copy")
     stage_edit_parser.add_argument("--source", default="")
+    stage_edit_parser.add_argument("--runtime", default="")
+    stage_edit_parser.add_argument("--domain", default="")
+    stage_edit_parser.add_argument("--cert", default="")
 
     func_edit_parser = sub_editparsers.add_parser("function")
     func_edit_parser.add_argument("name")
     func_edit_parser.add_argument("--handler", default="")
     func_edit_parser.add_argument("--method", default="")
     func_edit_parser.add_argument("--path", default="")
-    func_edit_parser.add_argument("--runtime", default="")
     func_edit_parser.add_argument("--stage", required=True)
 
     rm_parser = subparsers.add_parser("rm")

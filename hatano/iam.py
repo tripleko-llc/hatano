@@ -12,7 +12,8 @@ trust = {
       "Principal": {
         "Service": [
             "lambda.amazonaws.com",
-            "apigateway.amazonaws.com"
+            "apigateway.amazonaws.com",
+            "events.amazonaws.com"
             ]
       },
       "Action": "sts:AssumeRole"
