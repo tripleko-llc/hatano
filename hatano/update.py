@@ -10,7 +10,10 @@ def update(args):
     c = Conf()
     project, stg_conf = c.get_stage(stage)
 
-    for fn in stg_conf.get("functions", []):
+    for fname in stg_conf.get("functions", {}):
+        fn = stg_conf["functions"][fname]
+        fn["name"] = fname
+
         lmb = Lambda(stage, fn)
         lmb.update_function()
 

@@ -1,5 +1,6 @@
 hatano_settings.yml
 src/
-requirements-dev.txt
+requirements-*.txt
 *.egg-info
 Pipfile*
+*.bak

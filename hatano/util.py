@@ -98,5 +98,9 @@ class Conf:
         with open(self.conf, 'w') as f:
             yaml.dump(conf, f)
 
+    def show(self):
+        with open(self.conf) as f:
+            return f.read()
+
 
 

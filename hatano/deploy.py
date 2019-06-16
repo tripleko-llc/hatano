@@ -18,7 +18,10 @@ def deploy(args):
     api = RestApi(project, create=True)
 
     # Create each function and link to and endpoint
-    for fn in stg_conf.get("functions", []):
+    for fname in stg_conf.get("functions", {}):
+        fn = stg_conf["functions"][fname]
+        fn["name"] = fname
+
         deploy_func(stage, fn, api=api)
 
     # Deploy the API
@@ -34,7 +37,7 @@ def deploy_func(stage, fn, api=None):
     if not api:
         api = RestApi(stage, create=True)
 
-    http_method = fn.get("http", "")
+    http_method = fn.get("method", "")
     http_path = fn.get("path")
 
     # Create iam role

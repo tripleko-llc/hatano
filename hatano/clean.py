@@ -2,7 +2,7 @@ from hatano.util import Conf
 
 import boto3
 
-def delete(args):
+def clean(args):
     stage = args.stage
     c = Conf()
     project, stg_conf = c.get_stage(stage)
@@ -19,8 +19,7 @@ def delete(args):
             except:
                 pass
 
-    for fn in stg_conf.get("functions", []):
-        name = fn.get("name", "")
+    for name in stg_conf.get("functions", {}):
         fullname = f"{project}-{name}-{stage}"
 
         try:
