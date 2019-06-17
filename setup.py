@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 import os
 
@@ -25,6 +25,7 @@ setup(
         author=info['__author__'],
         author_email=info['__author_email__'],
         url="https://github.com/tripleko-llc/hatano",
+        packages=find_packages(),
         install_requires=pkgs,
         entry_points={
             'console_scripts': [
