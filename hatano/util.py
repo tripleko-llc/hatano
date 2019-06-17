@@ -8,7 +8,7 @@ import os
 import random
 import string
 import sys
-import yaml
+import json
 
 global_conf_file = './hatano_settings.yml'
 region = boto3.session.Session().region_name
@@ -72,7 +72,7 @@ class Conf:
             raise HatanoError(f"No {self.conf} found")
     
         with open(self.conf) as f:
-            conf = yaml.safe_load(f.read())
+            conf = json.load(f)
 
         if not conf:
             return "", {}
@@ -90,17 +90,19 @@ class Conf:
             pass
 
     def read(self):
+        if not self.exists():
+            return
         with open(self.conf) as f:
-            conf = yaml.safe_load(f.read())
+            conf = json.load(f)
         return conf
 
     def write(self, conf):
         with open(self.conf, 'w') as f:
-            yaml.dump(conf, f)
+            json.dump(conf, f, indent=2)
 
     def show(self):
-        with open(self.conf) as f:
-            return f.read()
+        conf = self.read()
+        return json.dumps(conf, indent=2)
 
 
 
