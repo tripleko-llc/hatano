@@ -10,7 +10,7 @@ from hatano.actions import edit
 
 import argparse
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 __author__ = 'Jared Nishikawa'
 __author_email__ = 'jared@tripleko.com'
 __description__ = 'Microframework for Lambda/API gateway'
