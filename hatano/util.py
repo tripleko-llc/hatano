@@ -10,7 +10,7 @@ import string
 import sys
 import json
 
-global_conf_file = './hatano_settings.yml'
+global_conf_file = './hatano_settings.json'
 region = boto3.session.Session().region_name
 
 
