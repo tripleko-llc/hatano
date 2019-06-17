@@ -11,6 +11,7 @@ def update(args):
     project, stg_conf = c.get_stage(stage)
 
     for fname in stg_conf.get("functions", {}):
+        print(f"Updating function {fname}")
         fn = stg_conf["functions"][fname]
         fn["name"] = fname
 
