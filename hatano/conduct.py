@@ -133,21 +133,21 @@ class Conductor:
         http_path = fn.get("path")
     
         # Create iam role
-        print("  - Creating IAM role")
+        print(f"  - Creating IAM role ({name})")
         iam = IamRole(self.stage, fn)
         role = iam.lambda_role()
         iam.put_custom_policy()
         role_arn = role['Role']['Arn']
     
         # Create lambda
-        print("  - Creating lambda")
+        print(f"  - Creating lambda ({name})")
         lmb = Lambda(self.stage, fn, role_arn=role_arn)
         func = lmb.create_function()
         func_arn = func['FunctionArn']
         lmb.add_permission("apigateway", "InvokeFunction")
     
         # Create resource and endpoint
-        print("  - Linking endpoint to lambda")
+        print(f"  - Linking endpoint to lambda ({name})")
         resource = self.api.create_resource(http_path)
         resource.link_endpoint(http_method, func_arn)
 
