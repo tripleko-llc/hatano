@@ -4,6 +4,7 @@ from hatano.iam import IamRole
 from hatano.s3 import S3
 
 import boto3
+import os
 
 def clean(args):
     stage = args.stage
@@ -79,3 +80,10 @@ def clean(args):
             iam.delete_role()
         except Exception as e:
             print(f"Failed: {e}")
+
+    try:
+        print(f"Deleting requirements-{stage}.txt")
+        os.remove(f"requirements-{stage}.txt")
+    except Exception as e:
+        print(f"Failed: {e}")
+
