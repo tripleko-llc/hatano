@@ -67,20 +67,20 @@ class Conf:
     def __init__(self, conf=global_conf_file):
         self.conf = conf
 
-    def get_stage(self, stage):
-        if not os.path.isfile(self.conf):
-            raise HatanoError(f"No {self.conf} found")
-    
-        with open(self.conf) as f:
-            conf = json.load(f)
+    #def get_stage(self, stage):
+    #    if not os.path.isfile(self.conf):
+    #        raise HatanoError(f"No {self.conf} found")
+    #
+    #    with open(self.conf) as f:
+    #        conf = json.load(f)
 
-        if not conf:
-            return "", {}
+    #    if not conf:
+    #        return "", {}
 
-        project = conf.get("project", "")
-        stages = conf.get("stages", {})
-        
-        return project, stages.get(stage, {})
+    #    project = conf.get("project", "")
+    #    stages = conf.get("stages", {})
+    #    
+    #    return project, stages.get(stage, {})
         
     def exists(self):
         return os.path.isfile(self.conf)

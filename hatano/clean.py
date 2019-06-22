@@ -81,9 +81,10 @@ def clean(args):
         except Exception as e:
             print(f"Failed: {e}")
 
-    try:
-        print(f"Deleting requirements-{stage}.txt")
-        os.remove(f"requirements-{stage}.txt")
-    except Exception as e:
-        print(f"Failed: {e}")
-
+        try:
+            print(f"Cleaning up CloudWatch logs {fullname}")
+            logs = boto3.client('logs')
+            groupname = f"/aws/lambda/{fullname}"
+            logs.delete_log_group(logGroupName=groupname)
+        except Exception as e:
+            print(f"Failed: {e}")

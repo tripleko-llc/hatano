@@ -1,5 +1,4 @@
-from hatano.deploy import deploy
-from hatano.update import update
+from hatano.conduct import Conductor
 from hatano.clean import clean
 
 from hatano.actions import init
@@ -68,10 +67,12 @@ def handle():
     args = parser.parse_args()
 
     if args.action == "deploy":
-        deploy(args)
+        C = Conductor(args)
+        C.deploy_all()
 
     elif args.action == "update":
-        update(args)
+        C = Conductor(args)
+        C.update_funcs()
 
     elif args.action == "clean":
         clean(args)

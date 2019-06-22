@@ -134,7 +134,8 @@ class IamRole:
         self.stage = stage
         self.name = fnargs.get("name")
         c = Conf()
-        self.project, stg_conf = c.get_stage(stage)
+        conf = c.read()
+        self.project = conf["project"]
         self.iam = boto3.client('iam')
         self.fullname = f"{self.project}-{self.name}-{self.stage}"
 

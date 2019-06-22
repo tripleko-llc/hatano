@@ -68,7 +68,6 @@ class Route53:
                             }
                         )
                 return
-        print(f"record not found for {name}")
 
 
 

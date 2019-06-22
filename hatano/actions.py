@@ -2,6 +2,7 @@ from hatano.util import Conf
 from copy import deepcopy
 
 import sys
+import os
 
 
 def init(args):
@@ -79,13 +80,16 @@ def remove(_args):
 
 
 def rm_object(name, typ):
-    print("Removing", typ, name)
     c = Conf()
     conf = c.read()
     if name in conf.get(typ, {}):
         del conf[typ][name]
     c.write(conf)
-
+    if typ == "stage":
+        try:
+            os.remove(f"requirements-{name}.txt")
+        except Exception as e:
+            print(e)
 
 def edit(args):
     if args.object == "stage":
