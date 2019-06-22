@@ -19,7 +19,7 @@ class Conductor:
 
         self.functions = []
         if args.function:
-            self.functions = [args.function]
+            self.functions = args.function
         else:
             self.functions = self.conf.get("function", {}).keys()
 
@@ -35,9 +35,17 @@ class Conductor:
             raise Exception(f"Stage {stage} not defined")
 
     def update_funcs(self):
+        self.create_api()
         for fname in self.functions:
             print(f"Updating function {fname}")
-            self.update_func(fname)
+            try:
+                self.update_func(fname)
+            except:
+                print(f"Function {fname} doesn't exist.  Creating...")
+                self.deploy_func(fname)
+                self.deploy_api()
+        self.finish()
+
 
     def update_func(self, name):
         fn = self.conf["function"][name]
@@ -127,13 +135,25 @@ class Conductor:
         if domain and cert:
             print(f"Creating custom domain name {domain}")
             cert = Cert(cert)
-            r = self.api.create_domain(domain, cert.arn)
+            try:
+                r = self.api.create_domain(domain, cert.arn)
+            except Exception as e:
+                print("Error creating domain", e)
+                return
             cloudfront = r['distributionDomainName']
             r53 = Route53()
 
             print("Creating cname record")
-            r53.add_cname_record(domain, cloudfront)
-            self.api.create_base_path_mapping(domain, "", stage)
+            try:
+                r53.add_cname_record(domain, cloudfront)
+            except Exception as e:
+                print("Error adding cname record", e)
+                return
+            try:
+                self.api.create_base_path_mapping(domain, "", stage)
+            except Exception as e:
+                print("Error creating base path mapping", e)
+                return
             self.certified = True
 
     def finish(self):

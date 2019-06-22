@@ -38,7 +38,7 @@ def handle():
             p = actionparsers[action]
             p.add_argument("stage")
             if action in {"deploy", "update"}:
-                p.add_argument("--function", "-f")
+                p.add_argument("--function", "-f", nargs="+")
             continue
 
         if action not in {"mk", "edit", "rm"}:
