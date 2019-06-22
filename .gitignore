@@ -1,5 +1,6 @@
 *.json
 src/
+s3/
 requirements-*.txt
 *.egg-info
 Pipfile*
