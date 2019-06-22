@@ -5,13 +5,19 @@ from hatano.apigateway import RestApi
 from hatano.acm import Cert
 from hatano.route53 import Route53
 from hatano.s3 import S3
+from hatano.errors import HatanoError
 
 import os
+import threading
 
 
 class Conductor:
     def __init__(self, args):
-        self.conf = Conf().read()
+        self.args = args
+        c = Conf()
+        if not c.exists():
+            raise HatanoError("No config file found")
+        self.conf = c.read()
         self.stage = args.stage
         self.project = self.conf["project"]
         stages = self.conf.get("stage", {})
@@ -32,10 +38,17 @@ class Conductor:
             self.s3 = S3(self.s3_path, self.project, self.stage)
 
         if not self.stg_conf:
-            raise Exception(f"Stage {stage} not defined")
+            raise HatanoError(f"Stage {self.stage} not defined")
+
+    def update(self):
+        if self.args.bucket:
+            self.deploy_s3()
+        self.update_funcs()
+        self.finish()
 
     def update_funcs(self):
         self.create_api()
+        new = False
         for fname in self.functions:
             print(f"Updating function {fname}")
             try:
@@ -43,17 +56,22 @@ class Conductor:
             except:
                 print(f"Function {fname} doesn't exist.  Creating...")
                 self.deploy_func(fname)
-                self.deploy_api()
-        self.finish()
-
+                new = True
+        if new:
+            self.deploy_api()
 
     def update_func(self, name):
         fn = self.conf["function"][name]
         fn["name"] = name
+        if self.s3:
+            if "env" not in fn:
+                fn["env"] = {}
+            fn["env"]["DEFAULT_BUCKET"] = self.s3.name()
+
         lmb = Lambda(self.stage, fn)
         lmb.update_function()
 
-    def deploy_all(self):
+    def deploy(self):
         self.deploy_s3()
         self.create_api()
         self.deploy_funcs()
@@ -64,13 +82,13 @@ class Conductor:
     def deploy_s3(self):
         if self.s3:
             try:
-                print(f"Creating s3 bucket {s3.name()}")
+                print(f"Creating s3 bucket {self.s3.name()}")
                 self.s3.create()
             except Exception as e:
                 print(f"Failed: {e}")
             
             try:
-                print(f"Uploading contents of {self.s3_path} to s3 bucket {s3.name()}")
+                print(f"Uploading contents of {self.s3_path} to s3 bucket {self.s3.name()}")
                 self.s3.upload_all()
             except Exception as e:
                 print(f"Failed: {e}")
@@ -87,9 +105,15 @@ class Conductor:
 
     def deploy_funcs(self):
         # Create each function and link to and endpoint
+        threads = []
         for fname in self.functions:
             print(f"Deploying function {fname}")
-            self.deploy_func(fname)
+            t = threading.Thread(target=self.deploy_func, args=(fname,))
+            threads.append(t)
+            t.start()
+            #self.deploy_func(fname)
+        for t in threads:
+            t.join()
 
     def deploy_func(self, name):
         if not self.api:
@@ -98,9 +122,10 @@ class Conductor:
         fn = self.conf["function"][name]
         fn["name"] = name
         fn["runtime"] = self.conf["runtime"]
-        env = fn.get("env", {})
         if self.s3:
-            env["S3_BUCKET"] = self.s3.name()
+            if "env" not in fn:
+                fn["env"] = {}
+            fn["env"]["DEFAULT_BUCKET"] = self.s3.name()
 
         fullname = f"{self.project}-{name}-{self.stage}"
     
@@ -116,7 +141,7 @@ class Conductor:
     
         # Create lambda
         print("  - Creating lambda")
-        lmb = Lambda(self.stage, fn, role_arn=role_arn, env=env)
+        lmb = Lambda(self.stage, fn, role_arn=role_arn)
         func = lmb.create_function()
         func_arn = func['FunctionArn']
         lmb.add_permission("apigateway", "InvokeFunction")

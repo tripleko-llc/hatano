@@ -143,7 +143,8 @@ class IamRole:
         role = self.iam.create_role(
                 Path=f"/{self.project}/",
                 RoleName=self.fullname,
-                AssumeRolePolicyDocument=json.dumps(trust)
+                AssumeRolePolicyDocument=json.dumps(trust),
+                Description="Created automatically by Hatano"
                 )
         return role
 

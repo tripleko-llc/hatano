@@ -39,6 +39,7 @@ def handle():
             p.add_argument("stage")
             if action in {"deploy", "update"}:
                 p.add_argument("--function", "-f", nargs="+")
+                p.add_argument("--bucket", "-b", action="store_true")
             continue
 
         if action not in {"mk", "edit", "rm"}:
@@ -68,11 +69,11 @@ def handle():
 
     if args.action == "deploy":
         C = Conductor(args)
-        C.deploy_all()
+        C.deploy()
 
     elif args.action == "update":
         C = Conductor(args)
-        C.update_funcs()
+        C.update()
 
     elif args.action == "clean":
         clean(args)

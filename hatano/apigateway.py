@@ -43,7 +43,9 @@ class RestApi:
                 self.api = api
                 break
         else:
-            self.api = self.agw.create_rest_api(name=name)
+            self.api = self.agw.create_rest_api(
+                    name=name,
+                    description="Created automatically by Hatano")
 
         self.rest_id = self.api['id']
         self.url = f"https://{self.rest_id}.execute-api.{region}.amazonaws.com"
