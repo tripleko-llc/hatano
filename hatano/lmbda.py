@@ -9,14 +9,16 @@ import time
 class Lambda:
     def __init__(self, stage, fnargs, role_arn="", env={}):
         c = Conf()
+        conf = c.read()
         self.env = env
-        self.project, stg_conf = c.get_stage(stage)
+        self.project = conf["project"]
+        stg_conf = conf["stage"][stage]
         self.source = stg_conf.get("source")
         self.stage = stage
         self.role_arn = role_arn
         self.name = fnargs.get("name")
         self.handler = fnargs.get("handler")
-        self.runtime = fnargs.get("runtime")
+        self.runtime = conf["runtime"]
         self.lda = boto3.client('lambda')
         self.fullname = f"{self.project}-{self.name}-{self.stage}"
 
@@ -48,7 +50,7 @@ class Lambda:
                     func = self._create_function(zip_name)
                     break
                 except Exception as e:
-                    print(e)
+                    #print(e)
                     time.sleep(delay)
                     delay += 1
             else:

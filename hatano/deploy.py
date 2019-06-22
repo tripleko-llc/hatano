@@ -15,7 +15,14 @@ def deploy(args):
 
     # Get project configuration
     c = Conf()
-    project, stg_conf = c.get_stage(stage)
+    conf = c.read()
+    project = conf["project"]
+    stages = conf.get("stage", {})
+    stg_conf = stages.get(stage, {})
+    if not stg_conf:
+        print(f"Stage {stage} not defined")
+        return
+
     domain = stg_conf.get("domain")
     cert = stg_conf.get("cert")
     s3_path = stg_conf.get("bucket")
@@ -38,14 +45,14 @@ def deploy(args):
 
     # Create REST API
     print(f"Creating REST API for {project}")
-    api = RestApi(project, create=True)
+    api = RestApi(project)
 
     # Create each function and link to and endpoint
-    for fname in stg_conf.get("functions", {}):
+    for fname in conf.get("function", {}):
         print(f"Deploying function {fname}")
-        fn = stg_conf["functions"][fname]
+        fn = conf["function"][fname]
         fn["name"] = fname
-        fn["runtime"] = stg_conf["runtime"]
+        fn["runtime"] = conf["runtime"]
         if s3:
             if "env" not in fn:
                 fn["env"] = {}
@@ -82,9 +89,10 @@ def deploy(args):
 
 def deploy_func(stage, fn, api=None):
     c = Conf()
-    project, stg_conf = c.get_stage(stage)
+    conf = c.read()
+    project = conf["project"]
     if not api:
-        api = RestApi(stage, create=True)
+        api = RestApi(stage)
 
     name = fn["name"]
     env = fn.get("env", {})

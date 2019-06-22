@@ -8,11 +8,17 @@ import boto3
 def update(args):
     stage = args.stage
     c = Conf()
-    project, stg_conf = c.get_stage(stage)
+    conf = c.read()
 
-    for fname in stg_conf.get("functions", {}):
+    if args.function:
+        functions = [args.function]
+
+    else:
+        functions = conf.get("function", {}).keys()
+
+    for fname in functions:
         print(f"Updating function {fname}")
-        fn = stg_conf["functions"][fname]
+        fn = conf["function"][fname]
         fn["name"] = fname
 
         lmb = Lambda(stage, fn)

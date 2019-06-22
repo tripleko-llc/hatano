@@ -35,7 +35,7 @@ class ResourceContainer:
 
 
 class RestApi:
-    def __init__(self, name, create=False):
+    def __init__(self, name):
         self.agw = boto3.client('apigateway')
         apis = self.agw.get_rest_apis()
         for api in apis['items']:
@@ -43,10 +43,7 @@ class RestApi:
                 self.api = api
                 break
         else:
-            if create:
-                self.api = self.agw.create_rest_api(name=name)
-            else:
-                raise HatanoError(f"API {name} doesn't exist")
+            self.api = self.agw.create_rest_api(name=name)
 
         self.rest_id = self.api['id']
         self.url = f"https://{self.rest_id}.execute-api.{region}.amazonaws.com"
@@ -59,18 +56,16 @@ class RestApi:
         for resource in self.resources:
             if resource['path'] == path:
                 return resource
-        raise HatanoError(f"Resource does not exist: {path}")
+        return None
 
     def _create_resource(self, http_fullpath):
-        try:
-            resource = self.get_resource_by_path(http_fullpath)
-        except HatanoError:
-            pass
+        resource = self.get_resource_by_path(http_fullpath)
+        if resource:
+            return resource
 
         base, http_path = os.path.split(http_fullpath)
-        try:
-            parent = self.get_resource_by_path(base)
-        except HatanoError:
+        parent = self.get_resource_by_path(base)
+        if not parent:
             parent = self._create_resource(base)
 
         resource = self.agw.create_resource(

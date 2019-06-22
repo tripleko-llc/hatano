@@ -98,11 +98,11 @@ class Conf:
 
     def write(self, conf):
         with open(self.conf, 'w') as f:
-            json.dump(conf, f, indent=2)
+            json.dump(conf, f, indent=4)
 
     def show(self):
         conf = self.read()
-        return json.dumps(conf, indent=2)
+        return json.dumps(conf, indent=4)
 
 
 
