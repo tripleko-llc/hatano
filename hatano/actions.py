@@ -31,6 +31,7 @@ def add_stage(args):
     stage = args.stage
     copy = args.copy
     source = args.source
+    bucket = args.bucket
     runtime = args.runtime
     domain = args.domain
     cert = args.cert
@@ -55,7 +56,8 @@ def add_stage(args):
     conf["stages"][stage] = {
             "functions": {},
             "source": source,
-            "runtime": runtime}
+            "runtime": runtime,
+            "bucket": bucket}
     if domain:
         conf["stages"][stage]["domain"] = domain
     if cert:
@@ -119,6 +121,7 @@ def edit_stage(args):
     stage = args.stage
     copy = args.copy
     source = args.source
+    bucket = args.bucket
     runtime = args.runtime
     domain = args.domain
     cert = args.cert
@@ -136,6 +139,8 @@ def edit_stage(args):
 
     if source:
         conf["stages"][stage]["source"] = source
+    if bucket:
+        conf["stages"][stage]["bucket"] = bucket
     if runtime:
         conf["stages"][stage]["runtime"] = runtime
     if domain:
