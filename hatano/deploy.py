@@ -4,6 +4,7 @@ from hatano.lmbda import Lambda
 from hatano.apigateway import RestApi
 from hatano.acm import Cert
 from hatano.route53 import Route53
+from hatano.s3 import S3
 
 import os
 
@@ -17,7 +18,23 @@ def deploy(args):
     project, stg_conf = c.get_stage(stage)
     domain = stg_conf.get("domain")
     cert = stg_conf.get("cert")
-    s3 = stg_conf.get("s3")
+    s3_path = stg_conf.get("bucket")
+
+    # Create s3 bucket
+    s3 = None
+    if s3_path:
+        s3 = S3(s3_path, project, stage)
+        try:
+            print(f"Creating s3 bucket {s3.name()}")
+            s3.create()
+        except Exception as e:
+            print(f"Failed: {e}")
+        
+        try:
+            print(f"Uploading contents of {s3_path} to s3 bucket {s3.name()}")
+            s3.upload_all()
+        except Exception as e:
+            print(f"Failed: {e}")
 
     # Create REST API
     print(f"Creating REST API for {project}")
@@ -29,6 +46,10 @@ def deploy(args):
         fn = stg_conf["functions"][fname]
         fn["name"] = fname
         fn["runtime"] = stg_conf["runtime"]
+        if s3:
+            if "env" not in fn:
+                fn["env"] = {}
+            fn["env"]["S3_BUCKET"] = s3.name()
         deploy_func(stage, fn, api=api)
 
     # Deploy the API

@@ -10,7 +10,7 @@ from hatano.actions import edit
 
 import argparse
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 __author__ = 'Jared Nishikawa'
 __author_email__ = 'jared@tripleko.com'
 __description__ = 'Microframework for Lambda/API gateway'
@@ -34,6 +34,7 @@ def handle():
     stage_parser.add_argument("stage")
     stage_parser.add_argument("--copy")
     stage_parser.add_argument("--source", default="src")
+    stage_parser.add_argument("--bucket", default="s3")
     stage_parser.add_argument("--runtime", default="")
     stage_parser.add_argument("--domain", default="")
     stage_parser.add_argument("--cert", default="")
@@ -52,6 +53,7 @@ def handle():
     stage_edit_parser.add_argument("stage")
     stage_edit_parser.add_argument("--copy")
     stage_edit_parser.add_argument("--source", default="")
+    stage_edit_parser.add_argument("--bucket", default="")
     stage_edit_parser.add_argument("--runtime", default="")
     stage_edit_parser.add_argument("--domain", default="")
     stage_edit_parser.add_argument("--cert", default="")

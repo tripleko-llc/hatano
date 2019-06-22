@@ -1,6 +1,7 @@
 from hatano.util import Conf
 from hatano.route53 import Route53
 from hatano.iam import IamRole
+from hatano.s3 import S3
 
 import boto3
 
@@ -13,6 +14,21 @@ def clean(args):
     lda = boto3.client('lambda')
     agw = boto3.client('apigateway')
     r53 = Route53()
+    s3_path = stg_conf.get("bucket")
+
+    if s3_path:
+        s3 = S3(s3_path, project, stage)
+        try:
+            print(f"Emptying s3 bucket {s3.name()}")
+            s3.empty()
+        except Exception as e:
+            print(f"Failed: {e}")
+
+        try:
+            print(f"Deleting s3 bucket {s3.name()}")
+            s3.delete()
+        except Exception as e:
+            print(f"Failed: {e}")
 
     if domain:
         try:

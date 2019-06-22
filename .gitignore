@@ -1,6 +1,8 @@
-hatano_settings.yml
+*.json
 src/
+s3/
 requirements-*.txt
 *.egg-info
 Pipfile*
 *.bak
+*.sh
