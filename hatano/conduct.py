@@ -49,14 +49,20 @@ class Conductor:
     def update_funcs(self):
         self.create_api()
         new = False
+        threads = []
         for fname in self.functions:
             print(f"Updating function {fname}")
             try:
                 self.update_func(fname)
             except:
                 print(f"Function {fname} doesn't exist.  Creating...")
-                self.deploy_func(fname)
+                t = threading.Thread(target=self.deploy_func, args=(fname,))
+                threads.append(t)
+                t.start()
+                #self.deploy_func(fname)
                 new = True
+        for t in threads:
+            t.join()
         if new:
             self.deploy_api()
 
