@@ -7,16 +7,18 @@ import sys
 import time
 
 class Lambda:
-    def __init__(self, stage, fnargs, role_arn="", env={}):
+    def __init__(self, stage, fnargs, role_arn=""):
         c = Conf()
-        self.env = env
-        self.project, stg_conf = c.get_stage(stage)
+        conf = c.read()
+        self.env = fnargs.get("env", {})
+        self.project = conf["project"]
+        stg_conf = conf["stage"][stage]
         self.source = stg_conf.get("source")
         self.stage = stage
         self.role_arn = role_arn
         self.name = fnargs.get("name")
         self.handler = fnargs.get("handler")
-        self.runtime = fnargs.get("runtime")
+        self.runtime = conf["runtime"]
         self.lda = boto3.client('lambda')
         self.fullname = f"{self.project}-{self.name}-{self.stage}"
 
@@ -36,7 +38,8 @@ class Lambda:
                 Runtime=self.runtime,
                 Role=self.role_arn,
                 Environment={"Variables": self.env},
-                Code={'ZipFile': open(zip_name, 'rb').read()}
+                Code={'ZipFile': open(zip_name, 'rb').read()},
+                Description="Created automatically by Hatano"
                 )
         return func
 
@@ -48,7 +51,7 @@ class Lambda:
                     func = self._create_function(zip_name)
                     break
                 except Exception as e:
-                    print(e)
+                    #print(e)
                     time.sleep(delay)
                     delay += 1
             else:
@@ -60,6 +63,10 @@ class Lambda:
             self.lda.update_function_code(
                     FunctionName=self.fullname,
                     ZipFile=open(zip_name, 'rb').read()
+                    )
+            self.lda.update_function_configuration(
+                    FunctionName=self.fullname,
+                    Environment={"Variables": self.env}
                     )
 
     def add_permission(self, principal, action):

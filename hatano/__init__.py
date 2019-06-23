@@ -1,17 +1,16 @@
-from hatano.deploy import deploy
-from hatano.update import update
+from hatano.conduct import Conductor
 from hatano.clean import clean
 
 from hatano.actions import init
-from hatano.actions import add
+from hatano.actions import make
 from hatano.actions import remove
 from hatano.actions import show
 from hatano.actions import edit
 
 import argparse
 
-__version__ = '1.0.2'
-__author__ = 'Jared Nishikawa'
+__version__ = '1.0.3'
+__author__ = 'Tripleko LLC'
 __author_email__ = 'jared@tripleko.com'
 __description__ = 'Microframework for Lambda/API gateway'
 
@@ -19,73 +18,62 @@ __description__ = 'Microframework for Lambda/API gateway'
 def handle():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="action")
+    actions = ["mk", "edit", "rm", "init", "deploy", "update", "clean", "show"]
+    actionparsers = {}
+    for action in actions:
+        p = subparsers.add_parser(action)
+        actionparsers[action] = p
+    
+    objects = ["stage", "function"]
+    objectparsers = {}
+    for action in actionparsers:
 
-    init_parser = subparsers.add_parser("init")
+        if action == "init":
+            p = actionparsers[action]
+            p.add_argument("name")
+            p.add_argument("--runtime", required=True)
+            continue
 
-    deploy_parser = subparsers.add_parser("deploy")
-    update_parser = subparsers.add_parser("update")
-    clean_parser = subparsers.add_parser("clean")
-    show_parser = subparsers.add_parser("show")
+        if action in {"deploy", "update", "clean"}:
+            p = actionparsers[action]
+            p.add_argument("stage")
+            if action in {"deploy", "update"}:
+                p.add_argument("--function", "-f", nargs="+")
+                p.add_argument("--bucket", "-b", action="store_true")
+            continue
 
-    add_parser = subparsers.add_parser("add")
-    sub_addparsers = add_parser.add_subparsers(dest="object")
+        if action not in {"mk", "edit", "rm"}:
+            continue
 
-    stage_parser = sub_addparsers.add_parser("stage")
-    stage_parser.add_argument("stage")
-    stage_parser.add_argument("--copy")
-    stage_parser.add_argument("--source", default="src")
-    stage_parser.add_argument("--bucket", default="s3")
-    stage_parser.add_argument("--runtime", default="")
-    stage_parser.add_argument("--domain", default="")
-    stage_parser.add_argument("--cert", default="")
-
-    func_parser = sub_addparsers.add_parser("function")
-    func_parser.add_argument("name")
-    func_parser.add_argument("--handler", required=True)
-    func_parser.add_argument("--method", required=True)
-    func_parser.add_argument("--path", required=True)
-    func_parser.add_argument("--stage", required=True)
-
-    edit_parser=subparsers.add_parser("edit")
-    sub_editparsers = edit_parser.add_subparsers(dest="object")
-
-    stage_edit_parser = sub_editparsers.add_parser("stage")
-    stage_edit_parser.add_argument("stage")
-    stage_edit_parser.add_argument("--copy")
-    stage_edit_parser.add_argument("--source", default="")
-    stage_edit_parser.add_argument("--bucket", default="")
-    stage_edit_parser.add_argument("--runtime", default="")
-    stage_edit_parser.add_argument("--domain", default="")
-    stage_edit_parser.add_argument("--cert", default="")
-
-    func_edit_parser = sub_editparsers.add_parser("function")
-    func_edit_parser.add_argument("name")
-    func_edit_parser.add_argument("--handler", default="")
-    func_edit_parser.add_argument("--method", default="")
-    func_edit_parser.add_argument("--path", default="")
-    func_edit_parser.add_argument("--stage", required=True)
-
-    rm_parser = subparsers.add_parser("rm")
-    sub_rmparsers = rm_parser.add_subparsers(dest="object")
-
-    stage_rm_parser = sub_rmparsers.add_parser("stage")
-    stage_rm_parser.add_argument("stage")
-
-    func_rm_parser = sub_rmparsers.add_parser("function")
-    func_rm_parser.add_argument("function")
-    func_rm_parser.add_argument("--stage", required=True)
-
-    deploy_parser.add_argument("stage")
-    update_parser.add_argument("stage")
-    clean_parser.add_argument("stage")
-
+        _parser = actionparsers[action]
+        _subparsers = _parser.add_subparsers(dest="object")
+        for obj in objects:
+            q = _subparsers.add_parser(obj)
+    
+            if obj == "stage":
+                q.add_argument("stage")
+                q.add_argument("--source", default="src")
+                q.add_argument("--bucket")
+                q.add_argument("--domain")
+                q.add_argument("--cert")
+    
+            elif obj == "function":
+                q.add_argument("function")
+                if action in {"mk", "edit"}:
+                    q.add_argument("--handler", required=True)
+                    q.add_argument("--method", required=True)
+                    q.add_argument("--path", required=True)
+        
+    
     args = parser.parse_args()
 
     if args.action == "deploy":
-        deploy(args)
+        C = Conductor(args)
+        C.deploy()
 
     elif args.action == "update":
-        update(args)
+        C = Conductor(args)
+        C.update()
 
     elif args.action == "clean":
         clean(args)
@@ -93,8 +81,8 @@ def handle():
     elif args.action == "init":
         init(args)
 
-    elif args.action == "add":
-        add(args)
+    elif args.action == "mk":
+        make(args)
 
     elif args.action == "edit":
         edit(args)

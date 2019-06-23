@@ -4,11 +4,14 @@ from hatano.iam import IamRole
 from hatano.s3 import S3
 
 import boto3
+import os
 
 def clean(args):
     stage = args.stage
     c = Conf()
-    project, stg_conf = c.get_stage(stage)
+    conf = c.read()
+    project = conf["project"]
+    stg_conf = conf["stage"][stage]
     domain = stg_conf.get("domain")
 
     lda = boto3.client('lambda')
@@ -53,8 +56,8 @@ def clean(args):
                 print(f"Failed: {e}")
 
 
-    for name in stg_conf.get("functions", {}):
-        fn = stg_conf["functions"][name]
+    for name in conf.get("function", {}):
+        fn = conf["function"][name]
         fn["name"] = name
         iam = IamRole(stage, fn)
 
@@ -77,7 +80,11 @@ def clean(args):
             iam.delete_role()
         except Exception as e:
             print(f"Failed: {e}")
-   
 
-
-
+        try:
+            print(f"Cleaning up CloudWatch logs {fullname}")
+            logs = boto3.client('logs')
+            groupname = f"/aws/lambda/{fullname}"
+            logs.delete_log_group(logGroupName=groupname)
+        except Exception as e:
+            print(f"Failed: {e}")
