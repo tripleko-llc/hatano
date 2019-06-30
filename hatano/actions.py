@@ -19,60 +19,48 @@ def init(args):
     print("Hatano project exists")
 
 
-def make(args):
-    if args.object == "stage":
-        return make_stage(args)
-
-    elif args.object == "function":
-        return make_function(args)
-
-
-def make_stage(_args, edit=False):
+def make(_args):
     args = vars(_args)
-    stage = args["stage"]
+    typ = args["object"]
+    name = args[typ]
+    return make_object(name, typ, args)
 
-    with open(f'requirements-{stage}.txt', 'a') as f:
-        pass
+
+def make_object(name, typ, args, edit=False):
+    if typ == "stage":
+        with open(f'requirements-{name}.txt', 'a') as f:
+            pass
 
     c = Conf()
     conf = c.read()
 
-    if stage in conf.get("stage", {}) and not edit:
-        print(f"Stage {stage} already exists")
+    if name in conf.get(typ, {}) and not edit:
+        print(f"{typ} {name} already exists")
         return
 
-    if stage not in conf.get("stage", {}) and edit:
-        print(f"Stage {stage} doesn't exist")
+    if name not in conf.get(typ, {}) and edit:
+        print(f"{typ} {name} doesn't exist")
         return
 
-    if "stage" not in conf:
-        conf["stage"] = {}
+    if typ not in conf:
+        conf[typ] = {}
 
-    if stage not in conf["stage"]:
-        conf["stage"][stage] = {}
+    if name not in conf[typ]:
+        conf[typ][name] = {}
 
-    for key in ["source", "bucket", "domain", "cert"]:
-        if args[key]:
-            conf["stage"][stage][key] = args[key]
+    if typ == "stage":
+        attrs = ["source", "bucket", "domain", "cert"]
+    elif typ == "function":
+        attrs = ["handler", "method", "path"]
 
-    c.write(conf)
+    for attr in attrs:
+        if args.get(attr):
+            conf[typ][name][attr] = args.get(attr)
 
-
-def make_function(args):
-    c = Conf()
-    conf = c.read()
-    if "function" not in conf:
-        conf["function"] = {}
-    func = {
-            "handler": args.handler,
-            "method": args.method,
-            "path": args.path}
-    conf["function"][args.function] = func
     c.write(conf)
 
 
 def remove(_args):
-    c = Conf()
     args = vars(_args)
     typ = args["object"]
     name = args[typ]
@@ -91,44 +79,12 @@ def rm_object(name, typ):
         except Exception as e:
             print(e)
 
-def edit(args):
-    if args.object == "stage":
-        return make_stage(args, edit=True)
 
-    elif args.object == "function":
-        return edit_function(args)
-
-
-
-
-def edit_function(args):
-    stage = args.stage
-    c = Conf()
-    conf = c.read()
-
-    if stage not in conf.get("stage", {}):
-        print(f"Stage {stage} does not exist")
-        return
-
-    conf = c.read()
-    if "function" not in conf["stage"].get(stage, {}):
-        print(f"No functions defined in stage {stage}")
-        return
-
-    if args.name not in conf["stage"][stage]["function"]:
-        print(f"Function {args.name} not defined in stage {stage}")
-        return
-
-    func = conf["stage"][stage]["function"][args.name]
-    if args.handler:
-        func["handler"] = args.handler
-    if args.method:
-        func["method"] = args.method
-    if args.path:
-        func["path"] = args.path
-
-    conf["stage"][stage]["function"][args.name] = func
-    c.write(conf)
+def edit(_args):
+    args = vars(_args)
+    typ = args["object"]
+    name = args[typ]
+    return make_object(name, typ, args, edit=True)
 
 
 def show(args):

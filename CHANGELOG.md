@@ -1,6 +1,11 @@
 # Changelog
 
-## 1.0.3 (TBA)
+## 1.0.4 (20190629)
+
+- Fixed config editing
+- Experimental cloudfront deployment
+
+## 1.0.3 (20190622)
 
 - Threaded function deployment
 - Conductor replaces deploy.py and update.py

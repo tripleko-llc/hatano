@@ -59,11 +59,14 @@ def handle():
     
             elif obj == "function":
                 q.add_argument("function")
-                if action in {"mk", "edit"}:
+                if action == "mk":
                     q.add_argument("--handler", required=True)
                     q.add_argument("--method", required=True)
                     q.add_argument("--path", required=True)
-        
+                elif action == "edit":
+                    q.add_argument("--handler")
+                    q.add_argument("--method")
+                    q.add_argument("--path")
     
     args = parser.parse_args()
 

@@ -5,10 +5,12 @@ from hatano.apigateway import RestApi
 from hatano.acm import Cert
 from hatano.route53 import Route53
 from hatano.s3 import S3
+from hatano.cloudfront import CloudFront
 from hatano.errors import HatanoError
 
 import os
 import threading
+import time
 
 
 class Conductor:
@@ -34,6 +36,7 @@ class Conductor:
         self.s3 = None
         self.certified = False
         self.domain = ""
+        self.cdnlink = ""
         if self.s3_path:
             self.s3 = S3(self.s3_path, self.project, self.stage)
 
@@ -69,10 +72,12 @@ class Conductor:
     def update_func(self, name):
         fn = self.conf["function"][name]
         fn["name"] = name
+        if "env" not in fn:
+            fn["env"] = {}
         if self.s3:
-            if "env" not in fn:
-                fn["env"] = {}
             fn["env"]["DEFAULT_BUCKET"] = self.s3.name()
+        if self.cdnlink:
+            fn["env"]["CDN_LINK"] = self.cdnlink
 
         lmb = Lambda(self.stage, fn)
         lmb.update_function()
@@ -98,6 +103,18 @@ class Conductor:
                 self.s3.upload_all()
             except Exception as e:
                 print(f"Failed: {e}")
+
+            public_dir = "public"
+            public_path = os.path.join(self.s3_path, public_dir)
+            if os.path.isdir(public_path):
+                cf = CloudFront(self.project, self.stage, path=f"/{public_dir}")
+                dist = cf.create_distribution_s3(self.s3.name())
+                #print(dist)
+                self.cdnlink = dist['DomainName']
+                access_id = dist['DistributionConfig']['Origins']['Items'][0]['S3OriginConfig']['OriginAccessIdentity']
+                time.sleep(10)
+                self.s3.put_policy(access_id)
+                #self.s3.put_cors()
 
     def create_api(self):
         # Create REST API
@@ -181,7 +198,7 @@ class Conductor:
                 print("Error adding cname record", e)
                 return
             try:
-                self.api.create_base_path_mapping(domain, "", stage)
+                self.api.create_base_path_mapping(domain, "", self.stage)
             except Exception as e:
                 print("Error creating base path mapping", e)
                 return
