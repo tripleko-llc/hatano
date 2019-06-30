@@ -9,7 +9,7 @@ from hatano.actions import edit
 
 import argparse
 
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 __author__ = 'Tripleko LLC'
 __author_email__ = 'jared@tripleko.com'
 __description__ = 'Microframework for Lambda/API gateway'
