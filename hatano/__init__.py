@@ -9,7 +9,7 @@ from hatano.actions import edit
 
 import argparse
 
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 __author__ = 'Tripleko LLC'
 __author_email__ = 'jared@tripleko.com'
 __description__ = 'Microframework for Lambda/API gateway'
@@ -59,11 +59,14 @@ def handle():
     
             elif obj == "function":
                 q.add_argument("function")
-                if action in {"mk", "edit"}:
+                if action == "mk":
                     q.add_argument("--handler", required=True)
                     q.add_argument("--method", required=True)
                     q.add_argument("--path", required=True)
-        
+                elif action == "edit":
+                    q.add_argument("--handler")
+                    q.add_argument("--method")
+                    q.add_argument("--path")
     
     args = parser.parse_args()
 
